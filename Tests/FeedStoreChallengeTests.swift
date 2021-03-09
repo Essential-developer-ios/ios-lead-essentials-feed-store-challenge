@@ -5,21 +5,6 @@
 import XCTest
 import FeedStoreChallenge
 
-final class RealmFeedStore: FeedStore {
-
-	func deleteCachedFeed(completion: @escaping DeletionCompletion) {
-
-	}
-
-	func insert(_ feed: [LocalFeedImage], timestamp: Date, completion: @escaping InsertionCompletion) {
-
-	}
-
-	func retrieve(completion: @escaping RetrievalCompletion) {
-		completion(.empty)
-	}
-}
-
 class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	
 	//  ***********************
@@ -33,6 +18,14 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	//  Repeat this process until all tests are passing.
 	//
 	//  ***********************
+
+	override func setUp() {
+		super.setUp()
+		let sut = try! makeSUT()
+		let exp = expectation(description: "Wait for deletion")
+		sut.deleteCachedFeed { _ in  exp.fulfill() }
+		wait(for: [exp], timeout: 1.0)
+	}
 	
 	func test_retrieve_deliversEmptyOnEmptyCache() throws {
 		let sut = try makeSUT()
@@ -47,9 +40,9 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	}
 	
 	func test_retrieve_deliversFoundValuesOnNonEmptyCache() throws {
-//		let sut = try makeSUT()
-//
-//		assertThatRetrieveDeliversFoundValuesOnNonEmptyCache(on: sut)
+		let sut = try makeSUT()
+
+		assertThatRetrieveDeliversFoundValuesOnNonEmptyCache(on: sut)
 	}
 	
 	func test_retrieve_hasNoSideEffectsOnNonEmptyCache() throws {
@@ -109,7 +102,7 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	// - MARK: Helpers
 	
 	private func makeSUT() throws -> FeedStore {
-		RealmFeedStore()
+		try RealmFeedStore()
 	}
 	
 }
