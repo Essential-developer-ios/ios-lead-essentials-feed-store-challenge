@@ -6,11 +6,25 @@ final class RealmFeedImage: Object {
 	@objc dynamic var imageDescription: String?
 	@objc dynamic var location: String?
 	@objc dynamic var url: String = ""
+
+	convenience init(id: String, imageDescription: String?, location: String?, url: String) {
+		self.init()
+		self.id = id
+		self.imageDescription = imageDescription
+		self.location = location
+		self.url = url
+	}
 }
 
 final class RealmFeed: Object {
 	@objc dynamic var timestamp: Date = .init()
-	var feedImages: List<RealmFeedImage> = .init()
+	var realmFeedImages: List<RealmFeedImage> = .init()
+
+	convenience init(timestamp: Date, realmFeedImages: [RealmFeedImage]) {
+		self.init()
+		self.timestamp = timestamp
+		self.realmFeedImages.append(objectsIn: realmFeedImages)
+	}
 }
 
 public final class RealmFeedStore: FeedStore {
@@ -32,12 +46,10 @@ public final class RealmFeedStore: FeedStore {
 	}
 
 	public func insert(_ feed: [LocalFeedImage], timestamp: Date, completion: @escaping InsertionCompletion) {
-		let realmFeedImages = List<RealmFeedImage>()
-		feed.forEach { realmFeedImages.append(realmFeedImage(from: $0)) }
-
-		let realmFeed = RealmFeed()
-		realmFeed.timestamp = timestamp
-		realmFeed.feedImages = realmFeedImages
+		let realmFeed = RealmFeed(
+			timestamp: timestamp,
+			realmFeedImages: feed.map(realmFeedImage)
+		)
 
 		do {
 			try realm.write {
@@ -50,10 +62,10 @@ public final class RealmFeedStore: FeedStore {
 	}
 
 	public func retrieve(completion: @escaping RetrievalCompletion) {
-		if let realmFeed = realm.objects(RealmFeed.self).first, !realmFeed.feedImages.isEmpty {
+		if let realmFeed = realm.objects(RealmFeed.self).first, !realmFeed.realmFeedImages.isEmpty {
 			completion(
 				.found(
-					feed: realmFeed.feedImages.map(localFeedImage(from:)),
+					feed: realmFeed.realmFeedImages.compactMap(localFeedImage),
 					timestamp: realmFeed.timestamp
 				)
 			)
@@ -63,20 +75,24 @@ public final class RealmFeedStore: FeedStore {
 	}
 
 	private func realmFeedImage(from localFeedImage: LocalFeedImage) -> RealmFeedImage {
-		let realmFeedImage = RealmFeedImage()
-		realmFeedImage.id = localFeedImage.id.uuidString
-		realmFeedImage.imageDescription = localFeedImage.description
-		realmFeedImage.location = localFeedImage.location
-		realmFeedImage.url = localFeedImage.url.absoluteString
-		return realmFeedImage
+		.init(
+			id: localFeedImage.id.uuidString,
+			imageDescription: localFeedImage.description,
+			location: localFeedImage.location,
+			url: localFeedImage.url.absoluteString
+		)
 	}
 
-	private func localFeedImage(from realmFeedImage: RealmFeedImage) -> LocalFeedImage {
-		.init(
-			id: UUID(uuidString: realmFeedImage.id)!,
+	private func localFeedImage(from realmFeedImage: RealmFeedImage) -> LocalFeedImage? {
+		guard let id = UUID(uuidString: realmFeedImage.id), let url = URL(string: realmFeedImage.url) else {
+			return nil
+		}
+
+		return .init(
+			id: id,
 			description: realmFeedImage.imageDescription,
 			location: realmFeedImage.location,
-			url: URL(string: realmFeedImage.url)!
+			url: url
 		)
 	}
 }
