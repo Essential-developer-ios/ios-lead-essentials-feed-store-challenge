@@ -21,10 +21,14 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 
 	override func setUp() {
 		super.setUp()
-		let sut = try! makeSUT()
-		let exp = expectation(description: "Wait for deletion")
-		sut.deleteCachedFeed { _ in  exp.fulfill() }
-		wait(for: [exp], timeout: 1.0)
+
+		try? FileManager.default.removeItem(at: testSpecificStoreURL)
+	}
+
+	override func tearDown() {
+		super.tearDown()
+
+		try? FileManager.default.removeItem(at: testSpecificStoreURL)
 	}
 	
 	func test_retrieve_deliversEmptyOnEmptyCache() throws {
@@ -101,8 +105,22 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	
 	// - MARK: Helpers
 	
-	private func makeSUT() throws -> FeedStore {
-		try RealmFeedStore()
+	private func makeSUT(isReadOnly: Bool = false, inMemoryIdentifier: String? = nil) throws -> FeedStore {
+		var configuration: RealmFeedStore.Configuration
+		if let inMemoryIdentifier = inMemoryIdentifier {
+			configuration = RealmFeedStore.Configuration(inMemoryIdentifier: inMemoryIdentifier)
+			configuration.readOnly = isReadOnly
+		} else {
+			configuration = RealmFeedStore.Configuration(fileURL: testSpecificStoreURL, readOnly: isReadOnly)
+		}
+
+		return try RealmFeedStore(configuration: configuration)
+	}
+
+	private var testSpecificStoreURL: URL {
+		FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
+			.first!
+			.appendingPathComponent("test.realm")
 	}
 	
 }
@@ -115,37 +133,21 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 //
 //  ***********************
 
-//extension FeedStoreChallengeTests: FailableRetrieveFeedStoreSpecs {
-//
-//	func test_retrieve_deliversFailureOnRetrievalError() throws {
-////		let sut = try makeSUT()
-////
-////		assertThatRetrieveDeliversFailureOnRetrievalError(on: sut)
-//	}
-//
-//	func test_retrieve_hasNoSideEffectsOnFailure() throws {
-////		let sut = try makeSUT()
-////
-////		assertThatRetrieveHasNoSideEffectsOnFailure(on: sut)
-//	}
-//
-//}
+extension FeedStoreChallengeTests: FailableInsertFeedStoreSpecs {
 
-//extension FeedStoreChallengeTests: FailableInsertFeedStoreSpecs {
+	func test_insert_deliversErrorOnInsertionError() throws {
+//		let sut = try makeSUT(isReadOnly: true, inMemoryIdentifier: "\(type(of: self))")
 //
-//	func test_insert_deliversErrorOnInsertionError() throws {
-////		let sut = try makeSUT()
-////
-////		assertThatInsertDeliversErrorOnInsertionError(on: sut)
-//	}
+//		assertThatInsertDeliversErrorOnInsertionError(on: sut)
+	}
+
+	func test_insert_hasNoSideEffectsOnInsertionError() throws {
+//		let sut = try makeSUT()
 //
-//	func test_insert_hasNoSideEffectsOnInsertionError() throws {
-////		let sut = try makeSUT()
-////
-////		assertThatInsertHasNoSideEffectsOnInsertionError(on: sut)
-//	}
-//
-//}
+//		assertThatInsertHasNoSideEffectsOnInsertionError(on: sut)
+	}
+
+}
 
 //extension FeedStoreChallengeTests: FailableDeleteFeedStoreSpecs {
 //

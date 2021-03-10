@@ -28,10 +28,12 @@ final class RealmFeed: Object {
 }
 
 public final class RealmFeedStore: FeedStore {
+	public typealias Configuration = Realm.Configuration
+
 	private let realm: Realm
 
-	public init() throws {
-		self.realm = try Realm()
+	public init(configuration: Configuration = .defaultConfiguration) throws {
+		self.realm = try Realm(configuration: configuration)
 	}
 
 	public func deleteCachedFeed(completion: @escaping DeletionCompletion) {
