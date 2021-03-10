@@ -38,26 +38,18 @@ public final class RealmFeedStore: FeedStore {
 		do {
 			try realm.write {
 				realm.deleteAll()
-				completion(nil)
 			}
+			completion(nil)
 		} catch {
 			completion(error)
 		}
 	}
 
 	public func insert(_ feed: [LocalFeedImage], timestamp: Date, completion: @escaping InsertionCompletion) {
-		let realmFeed = RealmFeed(
-			timestamp: timestamp,
-			realmFeedImages: feed.map(realmFeedImage)
-		)
+		deleteCachedFeed { [weak self] error in
+			guard let self = self else { return completion(error) }
 
-		do {
-			try realm.write {
-				realm.add(realmFeed)
-				completion(nil)
-			}
-		} catch {
-			completion(error)
+			self.insertTo(feed, timestamp: timestamp, completion: completion)
 		}
 	}
 
@@ -71,6 +63,22 @@ public final class RealmFeedStore: FeedStore {
 			)
 		} else {
 			completion(.empty)
+		}
+	}
+
+	private func insertTo(_ feed: [LocalFeedImage], timestamp: Date, completion: @escaping InsertionCompletion) {
+		let realmFeed = RealmFeed(
+			timestamp: timestamp,
+			realmFeedImages: feed.map(realmFeedImage)
+		)
+
+		do {
+			try realm.write {
+				realm.add(realmFeed)
+			}
+			completion(nil)
+		} catch {
+			completion(error)
 		}
 	}
 
