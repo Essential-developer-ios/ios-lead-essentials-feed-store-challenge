@@ -18,18 +18,6 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	//  Repeat this process until all tests are passing.
 	//
 	//  ***********************
-
-	override func setUp() {
-		super.setUp()
-
-		try? FileManager.default.removeItem(at: testSpecificStoreURL)
-	}
-
-	override func tearDown() {
-		super.tearDown()
-
-		try? FileManager.default.removeItem(at: testSpecificStoreURL)
-	}
 	
 	func test_retrieve_deliversEmptyOnEmptyCache() throws {
 		let sut = try makeSUT()
@@ -105,62 +93,9 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	
 	// - MARK: Helpers
 	
-	private func makeSUT(isReadOnly: Bool = false, inMemoryIdentifier: String? = nil) throws -> FeedStore {
-		var configuration: RealmFeedStore.Configuration
-		if let inMemoryIdentifier = inMemoryIdentifier {
-			configuration = RealmFeedStore.Configuration(inMemoryIdentifier: inMemoryIdentifier)
-			configuration.readOnly = isReadOnly
-		} else {
-			configuration = RealmFeedStore.Configuration(fileURL: testSpecificStoreURL, readOnly: isReadOnly)
-		}
+	private func makeSUT() throws -> FeedStore {
+		let configuration = RealmFeedStore.Configuration(inMemoryIdentifier: String(describing: type(of: Self.self)))
 
 		return try RealmFeedStore(configuration: configuration)
 	}
-
-	private var testSpecificStoreURL: URL {
-		FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
-			.first!
-			.appendingPathComponent("test.realm")
-	}
-	
 }
-
-//  ***********************
-//
-//  Uncomment the following tests if your implementation has failable operations.
-//
-//  Otherwise, delete the commented out code!
-//
-//  ***********************
-
-extension FeedStoreChallengeTests: FailableInsertFeedStoreSpecs {
-
-	func test_insert_deliversErrorOnInsertionError() throws {
-//		let sut = try makeSUT(isReadOnly: true, inMemoryIdentifier: "\(type(of: self))")
-//
-//		assertThatInsertDeliversErrorOnInsertionError(on: sut)
-	}
-
-	func test_insert_hasNoSideEffectsOnInsertionError() throws {
-//		let sut = try makeSUT()
-//
-//		assertThatInsertHasNoSideEffectsOnInsertionError(on: sut)
-	}
-
-}
-
-//extension FeedStoreChallengeTests: FailableDeleteFeedStoreSpecs {
-//
-//	func test_delete_deliversErrorOnDeletionError() throws {
-////		let sut = try makeSUT()
-////
-////		assertThatDeleteDeliversErrorOnDeletionError(on: sut)
-//	}
-//
-//	func test_delete_hasNoSideEffectsOnDeletionError() throws {
-////		let sut = try makeSUT()
-////
-////		assertThatDeleteHasNoSideEffectsOnDeletionError(on: sut)
-//	}
-//
-//}
